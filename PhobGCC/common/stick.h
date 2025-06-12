@@ -471,7 +471,7 @@ void legalizeNotches(const int currentStepIn, float measuredNotchAngles[], float
 //adjustNotch is used to adjust the angles of the notch.
 //It is run after calibration points are collected.
 //It runs a legalization routine to limit subsequent notches
-void adjustNotch(const int currentStepIn, const float loopDelta, const WhichStick whichStick, float measuredNotchAngles[], float notchAngles[], NotchStatus notchStatus[], Buttons &btn, Buttons &hardware){
+void adjustNotch(const int currentStepIn, const float loopDelta, const WhichStick whichStick, float measuredNotchAngles[], float notchAngles[], NotchStatus notchStatus[], ButtonState &btn, ButtonState &hardware){
 	//set up variables based on current button state
 	bool CW = hardware.X;
 	bool CCW = hardware.Y;
@@ -515,7 +515,7 @@ void adjustNotch(const int currentStepIn, const float loopDelta, const WhichStic
 };
 
 //displayNotch is used in lieu of adjustNotch when doing basic calibration
-void displayNotch(const int currentStepIn, const bool calibratingAStick, const float notchAngles[], Buttons &btn){
+void displayNotch(const int currentStepIn, const bool calibratingAStick, const float notchAngles[], ButtonState &btn){
 	int currentStep = _calOrder[currentStepIn];
 	//display the desired value on the other stick
 	float x = 0;

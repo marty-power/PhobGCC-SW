@@ -4,9 +4,9 @@
 #include "structsAndEnums.h"
 
 
-Buttons _btn;
+ButtonState _btn;
 
-Buttons _hardware;
+ButtonState _hardware;
 
 RawStick _raw;
 

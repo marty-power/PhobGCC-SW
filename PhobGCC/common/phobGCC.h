@@ -18,7 +18,7 @@ using std::max;
 //#include "../teensy/Phob1_1Teensy4_0DiodeShort.h"// For PhobGCC board 1.1 with Teensy 4.0 and the diode shorted
 //#include "../teensy/Phob1_2Teensy4_0.h"          // For PhobGCC board 1.2.x with Teensy 4.0
 //#include "../rp2040/include/PicoProtoboard.h"    // For a protoboard with a Pico on it, used for developing for the RP2040
-//#include "../rp2040/include/Phob2_0.h"           // For PhobGCC Board 2.0 with RP2040
+#include "../rp2040/include/Phob2_0.h"           // For PhobGCC Board 2.0 with RP2040
 
 #include "structsAndEnums.h"
 #include "variables.h"
@@ -153,7 +153,7 @@ int calcRumblePower(const int rumble){
 	}
 }
 
-void freezeSticks(const int time, Buttons &btn, Buttons &hardware) {
+void freezeSticks(const int time, ButtonState &btn, ButtonState &hardware) {
 	btn.Cx = (uint8_t) (255);
 	btn.Cy = (uint8_t) (255);
 	btn.Ax = (uint8_t) (255);
@@ -186,7 +186,7 @@ void freezeSticks(const int time, Buttons &btn, Buttons &hardware) {
 	}
 }
 
-void freezeSticksToggleIndicator(const int time, Buttons &btn, Buttons &hardware, bool toggle) {
+void freezeSticksToggleIndicator(const int time, ButtonState &btn, ButtonState &hardware, bool toggle) {
 	btn.Cx = (uint8_t) (_floatOrigin + (toggle ? 50 : -50));
 	btn.Cy = (uint8_t) (_floatOrigin + (toggle ? 50 : -50));
 	btn.Ax = (uint8_t) (_floatOrigin + (toggle ? 50 : -50));
@@ -217,7 +217,7 @@ void freezeSticksToggleIndicator(const int time, Buttons &btn, Buttons &hardware
 }
 
 //This clears all the buttons but doesn't overwrite the sticks or shoulder buttons.
-void clearButtons(const int time, Buttons &btn, Buttons &hardware) {
+void clearButtons(const int time, ButtonState &btn, ButtonState &hardware) {
 	btn.A = (uint8_t) 0;
 	btn.B = (uint8_t) 0;
 	btn.X = (uint8_t) 0;
@@ -243,7 +243,7 @@ void clearButtons(const int time, Buttons &btn, Buttons &hardware) {
 	}
 }
 
-void showRumble(const int time, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void showRumble(const int time, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	btn.Cx = (uint8_t) _intOrigin;
 	btn.Cy = (uint8_t) (controls.rumble + _floatOrigin);
 	clearButtons(time, btn, hardware);
@@ -251,7 +251,7 @@ void showRumble(const int time, Buttons &btn, Buttons &hardware, ControlConfig &
 	setRumbleSetting(controls.rumble);
 }
 
-void changeRumble(const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void changeRumble(const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	debug_println("changing rumble");
 	if(increase == INCREASE) {
 		controls.rumble += 1;
@@ -272,7 +272,7 @@ void changeRumble(const Increase increase, Buttons &btn, Buttons &hardware, Cont
 //Make it so you don't need to press B.
 //This is only good if the sticks are calibrated, so
 // the setting auto-resets whenever you hard reset or recalibrate.
-void changeAutoInit(Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void changeAutoInit(ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	if(controls.autoInit == 0) {
 		controls.autoInit = 1;
 	} else {
@@ -285,7 +285,7 @@ void changeAutoInit(Buttons &btn, Buttons &hardware, ControlConfig &controls) {
 	setAutoInitSetting(controls.autoInit);
 }
 
-void adjustSnapback(const WhichAxis axis, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains){
+void adjustSnapback(const WhichAxis axis, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains){
 	debug_println("adjusting snapback filtering");
 	if(axis == XAXIS && increase == INCREASE){
 		controls.xSnapback = min(controls.xSnapback+1, controls.snapbackMax);
@@ -321,7 +321,7 @@ void adjustSnapback(const WhichAxis axis, const Increase increase, Buttons &btn,
 	setYSnapbackSetting(controls.ySnapback);
 }
 
-void adjustWaveshaping(const WhichStick whichStick, const WhichAxis axis, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls){
+void adjustWaveshaping(const WhichStick whichStick, const WhichAxis axis, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls){
 	debug_println("adjusting waveshaping");
 	if(whichStick == ASTICK){
 		if(axis == XAXIS){
@@ -364,7 +364,7 @@ void adjustWaveshaping(const WhichStick whichStick, const WhichAxis axis, const 
 	clearButtons(750, btn, hardware);
 }
 
-void adjustSmoothing(const WhichAxis axis, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains) {
+void adjustSmoothing(const WhichAxis axis, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains) {
 	debug_println("Adjusting Smoothing");
 	if (axis == XAXIS && increase == INCREASE) {
 		controls.axSmoothing++;
@@ -409,7 +409,7 @@ void adjustSmoothing(const WhichAxis axis, const Increase increase, Buttons &btn
 	clearButtons(750, btn, hardware);
 }
 
-void showAstickSettings(Buttons &btn, Buttons &hardware, const ControlConfig &controls, FilterGains &gains) {
+void showAstickSettings(ButtonState &btn, ButtonState &hardware, const ControlConfig &controls, FilterGains &gains) {
 	//Snapback on A-stick
 	btn.Ax = (uint8_t) (controls.xSnapback + _floatOrigin);
 	btn.Ay = (uint8_t) (controls.ySnapback + _floatOrigin);
@@ -425,7 +425,7 @@ void showAstickSettings(Buttons &btn, Buttons &hardware, const ControlConfig &co
 	clearButtons(2000, btn, hardware);
 }
 
-void adjustCstickSmoothing(const WhichAxis axis, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains) {
+void adjustCstickSmoothing(const WhichAxis axis, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains) {
 	debug_println("Adjusting C-Stick Smoothing");
 	if (axis == XAXIS && increase == INCREASE) {
 		controls.cxSmoothing++;
@@ -470,7 +470,7 @@ void adjustCstickSmoothing(const WhichAxis axis, const Increase increase, Button
 	clearButtons(750, btn, hardware);
 }
 
-void adjustCstickOffset(const WhichAxis axis, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void adjustCstickOffset(const WhichAxis axis, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	debug_println("Adjusting C-stick Offset");
 	if(axis == XAXIS && increase == INCREASE) {
 		controls.cXOffset++;
@@ -512,7 +512,7 @@ void adjustCstickOffset(const WhichAxis axis, const Increase increase, Buttons &
 	clearButtons(750, btn, hardware);
 }
 
-void showCstickSettings(Buttons &btn, Buttons &hardware, ControlConfig &controls, FilterGains &gains) {
+void showCstickSettings(ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains) {
 	//Snapback/smoothing on A-stick
 	btn.Ax = (uint8_t) (_floatOrigin + controls.cxSmoothing);
 	btn.Ay = (uint8_t) (_floatOrigin + controls.cySmoothing);
@@ -528,7 +528,7 @@ void showCstickSettings(Buttons &btn, Buttons &hardware, ControlConfig &controls
 	clearButtons(2000, btn, hardware);
 }
 
-void adjustCardinalSnapping(const WhichStick whichStick, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void adjustCardinalSnapping(const WhichStick whichStick, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	if(whichStick == ASTICK && increase == INCREASE) {
 		controls.astickCardinalSnapping++;
 		if(controls.astickCardinalSnapping > controls.cardinalSnappingMax) {
@@ -565,7 +565,7 @@ void adjustCardinalSnapping(const WhichStick whichStick, const Increase increase
 
 }
 
-void adjustAnalogScaler(const WhichStick whichStick, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void adjustAnalogScaler(const WhichStick whichStick, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	if(whichStick == ASTICK && increase == INCREASE) {
 		controls.astickAnalogScaler++;
 		if(controls.astickAnalogScaler > controls.analogScalerMax) {
@@ -601,7 +601,7 @@ void adjustAnalogScaler(const WhichStick whichStick, const Increase increase, Bu
 	clearButtons(750, btn, hardware);
 }
 
-void adjustTriggerOffset(const WhichTrigger trigger, const Increase increase, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void adjustTriggerOffset(const WhichTrigger trigger, const Increase increase, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	if(trigger == LTRIGGER && increase == INCREASE) {
 		controls.lTriggerOffset++;
 		if(controls.lTriggerOffset > controls.triggerMax) {
@@ -646,7 +646,7 @@ void adjustTriggerOffset(const WhichTrigger trigger, const Increase increase, Bu
 	clearButtons(100, btn, hardware);
 }
 
-void changeTournamentToggle(Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void changeTournamentToggle(ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	if(controls.tournamentToggle == controls.tournamentToggleMax) {
 		controls.tournamentToggle = 0;
 	} else {
@@ -665,7 +665,7 @@ void changeTournamentToggle(Buttons &btn, Buttons &hardware, ControlConfig &cont
 }
 
 //apply digital button swaps for L, R, or Z jumping
-void applyJump(const ControlConfig &controls, const Buttons &hardware, Buttons &btn){
+void applyJump(const ControlConfig &controls, const ButtonState &hardware, ButtonState &btn){
 	switch(controls.jumpConfig){
 		case SWAP_XZ:
 			btn.X = hardware.Z;
@@ -730,7 +730,7 @@ void setJumpConfig(JumpConfig jumpConfig, ControlConfig &controls){
 	setJumpSetting(controls.jumpConfig);
 }
 
-void toggleExtra(ExtrasSlot slot, Buttons &btn, Buttons &hardware, ControlConfig &controls){
+void toggleExtra(ExtrasSlot slot, ButtonState &btn, ButtonState &hardware, ControlConfig &controls){
 	ExtrasToggleFn toggleFn = extrasFunctions[slot].toggleFn;
 	if (toggleFn) {
 		bool toggle = toggleFn(controls.extras[slot].config);
@@ -738,7 +738,7 @@ void toggleExtra(ExtrasSlot slot, Buttons &btn, Buttons &hardware, ControlConfig
 	}
 }
 
-void configExtra(ExtrasSlot slot, Buttons &btn, Buttons &hardware, ControlConfig &controls){
+void configExtra(ExtrasSlot slot, ButtonState &btn, ButtonState &hardware, ControlConfig &controls){
 	ExtrasConfigFn configFn = extrasFunctions[slot].configFn;
 	if (configFn) {
 		Cardinals dpad;
@@ -750,7 +750,7 @@ void configExtra(ExtrasSlot slot, Buttons &btn, Buttons &hardware, ControlConfig
 	}
 }
 
-bool checkAdjustExtra(ExtrasSlot slot, Buttons &btn, bool checkConfig){
+bool checkAdjustExtra(ExtrasSlot slot, ButtonState &btn, bool checkConfig){
 	//Extras Toggles: Both control sticks as Up, Down, Left, or Right, and with A + B
 	if (!checkConfig){
 		switch(slot){
@@ -806,7 +806,7 @@ bool checkAdjustExtra(ExtrasSlot slot, Buttons &btn, bool checkConfig){
 	return false;
 }
 
-void nextTriggerState(WhichTrigger trigger, Buttons &btn, Buttons &hardware, ControlConfig &controls) {
+void nextTriggerState(WhichTrigger trigger, ButtonState &btn, ButtonState &hardware, ControlConfig &controls) {
 	if(trigger == LTRIGGER) {
 		if(controls.lConfig >= controls.triggerConfigMax) {
 			controls.lConfig = 0;
@@ -843,7 +843,7 @@ void nextTriggerState(WhichTrigger trigger, Buttons &btn, Buttons &hardware, Con
 	clearButtons(1000, btn, hardware);
 }
 
-void initializeButtons(const Pins &pin, Buttons &btn,int &startUpLa, int &startUpRa){
+void initializeButtons(const Pins &pin, ButtonState &btn,int &startUpLa, int &startUpRa){
 	//set the analog stick values to the chosen center value that will be reported to the console on startup
 	//We choose 127 (_intOrigin) for this, and elsewhere we use an offset of 127.5 (_floatOrigin) truncated to int in order to round properly
 	btn.Ax = _intOrigin;
@@ -1443,7 +1443,7 @@ void resetDefaults(HardReset reset, ControlConfig &controls, FilterGains &gains,
 #endif //BATCHSETTINGS
 }
 
-void copyButtons(const Buttons &src, Buttons &dest) {
+void copyButtons(const ButtonState &src, ButtonState &dest) {
 	dest.A = src.A;
 	dest.B = src.B;
 	dest.X = src.X;
@@ -1618,14 +1618,14 @@ void calibrationAdvance(ControlConfig &controls, int &currentCalStep, const Whic
 	}
 }
 
-void processButtons(Pins &pin, Buttons &btn, Buttons &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains, int &currentCalStep, bool &running, float tempCalPointsX[], float tempCalPointsY[], WhichStick &whichStick, NotchStatus notchStatus[], float notchAngles[], float measuredNotchAngles[], StickParams &aStickParams, StickParams &cStickParams){
+void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains, int &currentCalStep, bool &running, float tempCalPointsX[], float tempCalPointsY[], WhichStick &whichStick, NotchStatus notchStatus[], float notchAngles[], float measuredNotchAngles[], StickParams &aStickParams, StickParams &cStickParams){
 	//Gather the button data from the hardware
 	readButtons(pin, hardware);
 	hardware.La = (uint8_t) readLa(pin, controls.lTrigInitial, 1);
 	hardware.Ra = (uint8_t) readRa(pin, controls.rTrigInitial, 1);
 
 	//Copy hardware buttons into a temp
-	Buttons tempBtn;
+	ButtonState tempBtn;
 	copyButtons(hardware, tempBtn);
 
 	//Swap buttons here for jump remapping
@@ -2143,7 +2143,7 @@ void processButtons(Pins &pin, Buttons &btn, Buttons &hardware, ControlConfig &c
 	}
 }
 
-void readSticks(int readA, int readC, Buttons &btn, Pins &pin, RawStick &raw, const Buttons &hardware, const ControlConfig &controls, const FilterGains &normGains, const StickParams &aStickParams, const StickParams &cStickParams, float &dT, int &currentCalStep){
+void readSticks(int readA, int readC, ButtonState &btn, Pins &pin, RawStick &raw, const ButtonState &hardware, const ControlConfig &controls, const FilterGains &normGains, const StickParams &aStickParams, const StickParams &cStickParams, float &dT, int &currentCalStep){
 	readADCScale(_ADCScale, _ADCScaleFactor);
 
 	//on Arduino (and therefore Teensy), micros() overflows after about 71.58 minutes

@@ -114,7 +114,7 @@ void setPinModes() {
 	gpio_set_dir(_pinLED, GPIO_OUT);
 }
 
-void readButtons(const Pins &, Buttons &hardware) {
+void readButtons(const Pins &, ButtonState &hardware) {
 	hardware.A  = !gpio_get(_pinA);
 	hardware.B  = !gpio_get(_pinB);
 	hardware.X  = !gpio_get(_pinX);

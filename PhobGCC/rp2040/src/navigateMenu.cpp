@@ -26,7 +26,7 @@ void navigateMenu(unsigned char bitmap[],
 		bool &changeMade,
 		const int currentCalStep,
 		volatile uint8_t &pleaseCommit,
-		const Buttons &btn,
+		const ButtonState &btn,
 		uint16_t presses,
 		ControlConfig &controls,
 		DataCapture &capture);
@@ -38,8 +38,8 @@ void __time_critical_func(handleMenuButtons)(unsigned char bitmap[],
 		bool &changeMade,
 		const int currentCalStep,
 		volatile uint8_t &pleaseCommit,
-		const Buttons &btn,
-		const Buttons &hardware,
+		const ButtonState &btn,
+		const ButtonState &hardware,
 		ControlConfig &controls,
 		DataCapture &capture) {
 	uint16_t presses = 0;
@@ -245,7 +245,7 @@ void navigateMenu(unsigned char bitmap[],
 		bool &changeMade,
 		const int currentCalStep,
 		volatile uint8_t &pleaseCommit,
-		const Buttons &btn,
+		const ButtonState &btn,
 		uint16_t presses,
 		ControlConfig &controls,
 		DataCapture &capture) {
@@ -1141,4 +1141,3 @@ void navigateMenu(unsigned char bitmap[],
 		}
 	}
 }
-

@@ -87,7 +87,11 @@ struct Pins{
 	int pinS;
 };
 
-union Buttons{
+enum ControllerCommands {
+	SAFE_MODE = 
+};
+
+union ButtonState{
 	uint8_t arr[10];
 	struct {
 

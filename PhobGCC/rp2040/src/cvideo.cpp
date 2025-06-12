@@ -133,8 +133,8 @@ volatile int _interlaceOffset = 0;
 
 /*-------------------------------------------------------------------*/
 int videoOut(const uint8_t pin_base,
-		Buttons &btn,
-		Buttons &hardware,
+		ButtonState &btn,
+		ButtonState &hardware,
 		RawStick &raw,
 		ControlConfig &config,
 		StickParams &aStick,

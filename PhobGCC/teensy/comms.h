@@ -116,7 +116,7 @@ volatile char _commResponse[_originLength] = {
 	takes the values that have been put into the button struct and translates them in the serial commands ready
 	to be sent to the gamecube/wii
 *******************/
-void setCommResponse(volatile char response[], Buttons &button){
+void setCommResponse(volatile char response[], ButtonState &button){
 	for(int i = 0; i < 8; i++){
 		//write all of the data in the button struct (taken from the dogebawx project, thanks to GoodDoge)
 #ifdef TEENSY3_2
@@ -713,7 +713,7 @@ void communicate(){
 #endif // TEENSY3_2
 
 
-void commsSetup(Buttons &btn) {
+void commsSetup(ButtonState &btn) {
 	setCommResponse(_originResponse, btn);
 
 	//set up communication interrupts, serial, and timers
