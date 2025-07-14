@@ -87,8 +87,85 @@ struct Pins{
 	int pinS;
 };
 
-enum ControllerCommands {
-	SAFE_MODE = 
+enum Buttons : uint16_t {
+	A = (1 << 15) | 1,
+	B = (1 << 14) | 1,
+	X = (1 << 13) | 1,
+	Y = (1 << 12) | 1,
+	S = (1 << 11) | 1,
+	Dl = (1 << 7) | 1,
+	Dr = (1 << 6) | 1,
+	Dd = (1 << 5) | 1,
+	Du = (1 << 4) | 1,
+	Z = (1 << 3) | 1,
+	R = (1 << 2) | 1,
+	L = (1 << 1) | 1
+};
+
+enum ControllerCommand : uint16_t {
+	SAFE_MODE = A | X | Y | S,
+	DISPLAY_VERSION = A | Z | Du,
+	SOFT_RESET = A | B | Z | S,
+	HARD_RESET = A | B | Z | Dd,
+	AUTO_INIT = A | X | Y | Z,
+	TOURNAMENT_TOGGLE = Z | S,
+	INCREASE_RUMBLE = A | B | Du,
+	DECREASE_RUMBLE = A | B | Dd,
+	DISPLAY_RUMBLE_SETTING = A | B | S,
+	ANALOG_STICK_CALIBRATION = A | X | Y | L,
+	C_STICK_CALIBRATION = A | X | Y | R,
+	ADVANCE_CALIBRATION = A | L | R,
+	UNDO_CALIBRATION = Z,
+	SKIP_TO_NOTCH_ADJ = S,
+	NOTCH_ADJUST_CW = X,
+	NOTCH_ADJUST_CCW = Y,
+	NOTCH_ADJUST_RESET = B,
+	INCREASE_ANALOG_X_SNAPBACK_FILTER = A | X | Du,
+	DECREASE_ANALOG_X_SNAPBACK_FILTER = A | X | Dd,
+	INCREASE_ANALOG_Y_SNAPBACK_FILTER = A | Y | Du,
+	DECREASE_ANALOG_Y_SNAPBACK_FILTER = A | Y | Dd,
+	INCREASE_ANALOG_X_WAVESHAPING = L | X | Du,
+	DECREASE_ANALOG_X_WAVESHAPING = L | X | Dd,
+	INCREASE_ANALOG_Y_WAVESHAPING = L | Y | Du,
+	DECREASE_ANALOG_Y_WAVESHAPING = L | Y | Dd,
+	INCREASE_ANALOG_X_SMOOTHING = R | X | Du,
+	DECREASE_ANALOG_X_SMOOTHING = R | X | Dd,
+	INCREASE_ANALOG_Y_SMOOTHING = R | Y | Du,
+	DECREASE_ANALOG_Y_SMOOTHING = R | Y | Dd,
+	DISPLAY_ANALOG_FILTER_SETTING = L | S,
+	INCREASE_ANALOG_SCALER = L | A | Du,
+	DECREASE_ANALOG_SCALER = L | A | Dd,
+	INCREASE_ANALOG_CARDINAL_SNAPPING = R | A | Du,
+	DECREASE_ANALOG_CARDINAL_SNAPPING = R | A | Dd,
+	INCREASE_C_STICK_X_SNAPBACK_FILTER = A | X | Du | Z,
+	DECREASE_C_STICK_X_SNAPBACK_FILTER = A | X | Dd | Z,
+	INCREASE_C_STICK_Y_SNAPBACK_FILTER = A | Y | Du | Z,
+	DECREASE_C_STICK_Y_SNAPBACK_FILTER = A | Y | Dd | Z,
+	INCREASE_C_STICK_X_WAVESHAPING = L | X | Du | Z,
+	DECREASE_C_STICK_X_WAVESHAPING = L | X | Dd | Z,
+	INCREASE_C_STICK_Y_WAVESHAPING = L | Y | Du | Z,
+	DECREASE_C_STICK_Y_WAVESHAPING = L | Y | Dd | Z,
+	INCREASE_C_STICK_X_OFFSET = R | X | Du | Z,
+	DECREASE_C_STICK_X_OFFSET = R | X | Dd | Z,
+	INCREASE_C_STICK_Y_OFFSET = R | Y | Du | Z,
+	DECREASE_C_STICK_Y_OFFSET = R | Y | Dd | Z,
+	DISPLAY_C_STICK_FILTER_SETTING = R | S,
+	INCREASE_C_STICK_SCALER = L | A | Du | Z,
+	DECREASE_C_STICK_SCALER = L | A | Dd | Z,
+	INCREASE_C_STICK_CARDINAL_SNAPPING = R | A | Du | Z,
+	DECREASE_C_STICK_CARDINAL_SNAPPING = R | A | Dd | Z,
+	SWAP_X_Z = X | Z | S,
+	SWAP_Y_Z = Y | Z | S,
+	SWAP_X_L = X | L | S,
+	SWAP_Y_L = Y | L | S,
+	SWAP_X_R = X | R | S,
+	SWAP_Y_R = Y | R | S,
+	CHANGE_L_TRIGGER_MODE = A | B | L,
+	CHANGE_R_TRIGGER_MODE = A | B | R,
+	INCREASE_L_TRIGGER_OFFSET = L | B | Du,
+	DECREASE_L_TRIGGER_OFFSET = L | B | Dd,
+	INCREASE_R_TRIGGER_OFFSET = R | B | Du,
+	DECREASE_R_TRIGGER_OFFSET = R | B | Dd,
 };
 
 union ButtonState{
@@ -131,6 +208,15 @@ union ButtonState{
 		uint8_t magic2 : 8;
 	};
 };
+
+uint16_t checkButtonCombination(ButtonState &buttons) {
+	uint16_t bits = 0;
+	bits |= buttons.arr[0];
+	bits = bits << 8;
+	bits |= buttons.arr[1];
+
+	return bits;
+}
 
 struct HardwareButtons{
 	uint8_t L;

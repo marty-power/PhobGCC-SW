@@ -1618,6 +1618,266 @@ void calibrationAdvance(ControlConfig &controls, int &currentCalStep, const Whic
 	}
 }
 
+void handleControllerConfig(ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains, int &currentCalStep, WhichStick &whichStick, StickParams &aStickParams, StickParams &cStickParams, int &settingChangeCount) {
+	uint16_t currentButtonCombo = checkButtonCombination(hardware);
+	bool matchFound = true;
+
+	// cases which don't add to settingChangeCount
+	switch (currentButtonCombo) {
+		case SOFT_RESET:
+			resetDefaults(SOFT, controls, gains, normGains, _aStickParams, _cStickParams);//don't reset sticks
+			freezeSticks(2000, btn, hardware);
+			return 0;
+		case HARD_RESET:
+			// actually do nothing, this is just to prevent other things from happening
+			return 0;
+		case DISPLAY_VERSION:
+			const int versionHundreds = floor(SW_VERSION/100.0);
+			const int versionOnes     = SW_VERSION-versionHundreds;
+			btn.Ax = (uint8_t) _floatOrigin;
+			btn.Ay = (uint8_t) _floatOrigin;
+			btn.Cx = (uint8_t) _floatOrigin + versionHundreds;
+			btn.Cy = (uint8_t) _floatOrigin + versionOnes;
+			clearButtons(2000, btn, hardware);
+			return 0;
+		case DISPLAY_ANALOG_FILTER_SETTING:
+			showAstickSettings(btn, hardware, controls, gains);
+			return 0;
+		case DISPLAY_C_STICK_FILTER_SETTING:
+			showCstickSettings(btn, hardware, controls, gains);
+			return 0;
+		case ANALOG_STICK_CALIBRATION:
+			debug_println("Calibrating the A stick");
+			whichStick = ASTICK;
+			currentCalStep ++;
+			advanceCal = true;
+			freezeSticks(2000, btn, hardware);
+			return 0;
+		case C_STICK_CALIBRATION:
+			debug_println("Calibrating the C stick");
+			whichStick = CSTICK;
+			currentCalStep ++;
+			advanceCal = true;
+			freezeSticks(2000, btn, hardware);
+			return 0;
+		default:
+			matchFound = false;
+	}
+	if (matchFound) return;
+
+	if (!matchFound) {
+		matchFound = true;
+		switch(currentButtonCombo) {
+			case AUTO_INIT:
+				changeAutoInit(btn, hardware, controls);
+				break;
+			case TOURNAMENT_TOGGLE:
+				changeTournamentToggle(btn, hardware, controls);
+				break;
+			case INCREASE_RUMBLE:
+	#ifdef RUMBLE
+				changeRumble(INCREASE, btn, hardware, controls);
+	#else // RUMBLE
+				//nothing
+				freezeSticks(2000, btn, hardware);
+	#endif // RUMBLE
+				break;
+			case DECREASE_RUMBLE:
+	#ifdef RUMBLE
+				changeRumble(DECREASE, btn, hardware, controls);
+	#else // RUMBLE
+				//nothing
+				freezeSticks(2000, btn, hardware);
+	#endif // RUMBLE
+				break;
+			case DISPLAY_RUMBLE_SETTING:
+	#ifdef RUMBLE
+				showRumble(2000, btn, hardware, controls);
+	#else // RUMBLE
+				freezeSticks(2000, btn, hardware);
+	#endif // RUMBLE
+				break;
+			case INCREASE_ANALOG_X_SNAPBACK_FILTER:
+				adjustSnapback(XAXIS, INCREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case DECREASE_ANALOG_X_SNAPBACK_FILTER:
+				adjustSnapback(XAXIS, DECREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case INCREASE_ANALOG_Y_SNAPBACK_FILTER:
+				adjustSnapback(YAXIS, INCREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case DECREASE_ANALOG_Y_SNAPBACK_FILTER:
+				adjustSnapback(YAXIS, DECREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case INCREASE_ANALOG_X_WAVESHAPING:
+				adjustWaveshaping(ASTICK, XAXIS, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_ANALOG_X_WAVESHAPING:
+				adjustWaveshaping(ASTICK, XAXIS, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_ANALOG_Y_WAVESHAPING:
+				adjustWaveshaping(ASTICK, YAXIS, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_ANALOG_Y_WAVESHAPING:
+				adjustWaveshaping(ASTICK, YAXIS, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_ANALOG_X_SMOOTHING:
+				adjustSmoothing(XAXIS, INCREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case DECREASE_ANALOG_X_SMOOTHING:
+				adjustSmoothing(XAXIS, DECREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case INCREASE_ANALOG_Y_SMOOTHING:
+				adjustSmoothing(YAXIS, INCREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case DECREASE_ANALOG_Y_SMOOTHING:
+				adjustSmoothing(YAXIS, DECREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case INCREASE_ANALOG_CARDINAL_SNAPPING:
+				adjustCardinalSnapping(ASTICK, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_ANALOG_CARDINAL_SNAPPING:
+				adjustCardinalSnapping(ASTICK, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_ANALOG_SCALER:
+				adjustAnalogScaler(ASTICK, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_ANALOG_SCALER:
+				adjustAnalogScaler(ASTICK, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_C_STICK_X_SNAPBACK_FILTER:
+				adjustCstickSmoothing(XAXIS, INCREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case DECREASE_C_STICK_X_SNAPBACK_FILTER:
+				adjustCstickSmoothing(XAXIS, DECREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case INCREASE_C_STICK_Y_SNAPBACK_FILTER:
+				adjustCstickSmoothing(YAXIS, INCREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case DECREASE_C_STICK_Y_SNAPBACK_FILTER:
+				adjustCstickSmoothing(YAXIS, DECREASE, btn, hardware, controls, gains, normGains);
+				break;
+			case INCREASE_C_STICK_X_WAVESHAPING:
+				adjustWaveshaping(CSTICK, XAXIS, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_C_STICK_X_WAVESHAPING:
+				adjustWaveshaping(CSTICK, XAXIS, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_C_STICK_Y_WAVESHAPING:
+				adjustWaveshaping(CSTICK, YAXIS, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_C_STICK_Y_WAVESHAPING:
+				adjustWaveshaping(CSTICK, YAXIS, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_C_STICK_X_OFFSET:
+				adjustCstickOffset(XAXIS, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_C_STICK_X_OFFSET:
+				adjustCstickOffset(XAXIS, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_C_STICK_Y_OFFSET:
+				adjustCstickOffset(YAXIS, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_C_STICK_Y_OFFSET:
+				adjustCstickOffset(YAXIS, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_C_STICK_CARDINAL_SNAPPING:
+				adjustCardinalSnapping(CSTICK, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_C_STICK_CARDINAL_SNAPPING:
+				adjustCardinalSnapping(CSTICK, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_C_STICK_SCALER:
+				adjustAnalogScaler(CSTICK, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_C_STICK_SCALER:
+				adjustAnalogScaler(CSTICK, DECREASE, btn, hardware, controls);
+				break;
+			case CHANGE_L_TRIGGER_MODE:
+				nextTriggerState(LTRIGGER, btn, hardware, controls);
+				break;
+			case CHANGE_R_TRIGGER_MODE:
+				nextTriggerState(RTRIGGER, btn, hardware, controls);
+				break;
+			case INCREASE_L_TRIGGER_OFFSET:
+				adjustTriggerOffset(LTRIGGER, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_L_TRIGGER_OFFSET:
+				adjustTriggerOffset(LTRIGGER, DECREASE, btn, hardware, controls);
+				break;
+			case INCREASE_R_TRIGGER_OFFSET:
+				adjustTriggerOffset(RTRIGGER, INCREASE, btn, hardware, controls);
+				break;
+			case DECREASE_R_TRIGGER_OFFSET:
+				adjustTriggerOffset(RTRIGGER, DECREASE, btn, hardware, controls);
+				break;
+			case SWAP_X_Z:
+				setJumpConfig(SWAP_XZ, controls);
+				freezeSticks(2000, btn, hardware);
+				break;
+			case SWAP_X_L:
+				setJumpConfig(SWAP_XL, controls);
+				freezeSticks(2000, btn, hardware);
+				break;
+			case SWAP_X_R:
+				setJumpConfig(SWAP_XR, controls);
+				freezeSticks(2000, btn, hardware);
+				break;
+			case SWAP_Y_Z:
+				setJumpConfig(SWAP_YZ, controls);
+				freezeSticks(2000, btn, hardware);
+				break;
+			case SWAP_Y_L:
+				setJumpConfig(SWAP_YL, controls);
+				freezeSticks(2000, btn, hardware);
+				break;
+			case SWAP_Y_R:
+				setJumpConfig(SWAP_YR, controls);
+				freezeSticks(2000, btn, hardware);
+				break;
+			default:
+				matchFound = false;
+		}
+	}
+
+	if (!matchFound) {
+		matchFound = true;
+		if(checkAdjustExtra(EXTRAS_UP, btn, false)) { // Toggle Extras
+			toggleExtra(EXTRAS_UP, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_DOWN, btn, false)) {
+			toggleExtra(EXTRAS_DOWN, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_LEFT, btn, false)) {
+			toggleExtra(EXTRAS_LEFT, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_RIGHT, btn, false)) {
+			toggleExtra(EXTRAS_RIGHT, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_UP, btn, true)) { // Configure Extras
+			configExtra(EXTRAS_UP, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_DOWN, btn, true)) {
+			configExtra(EXTRAS_DOWN, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_LEFT, btn, true)) {
+			configExtra(EXTRAS_LEFT, btn, hardware, controls);
+		} else if(checkAdjustExtra(EXTRAS_RIGHT, btn, true)) {
+			configExtra(EXTRAS_RIGHT, btn, hardware, controls);
+		} else {
+			matchFound = false;
+		}
+	}
+
+	if (!matchFound) {
+		//If the buttons were released after changing an applicable setting
+		if(settingChangeCount > 0) {
+			settingChangeCount = 0;
+			//request a commit only if we need to batch them.
+#ifdef BATCHSETTINGS
+			commitSettings();
+#endif //BATCHSETTINGS
+			return 0;
+		}
+	}
+
+	settingChangeCount++;
+}
+
 void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains, int &currentCalStep, bool &running, float tempCalPointsX[], float tempCalPointsY[], WhichStick &whichStick, NotchStatus notchStatus[], float notchAngles[], float measuredNotchAngles[], StickParams &aStickParams, StickParams &cStickParams){
 	//Gather the button data from the hardware
 	readButtons(pin, hardware);
@@ -1770,66 +2030,6 @@ void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlC
 	//Copy temp buttons (including analog triggers) back to btn
 	copyButtons(tempBtn, btn);
 
-	/* Current Commands List
-	* Safe Mode:  AXY+Start
-	* Display Version: AZ+Du
-	*
-	* Soft Reset:  ABZ+Start
-	* Hard Reset:  ABZ+Dd
-	* Auto-Initialize: AXY+Z
-	* Tournament Toggle:  Z+Start
-	*
-	* Increase/Decrease Rumble: AB+Du/Dd
-	* Show Current Rumble Setting: AB+Start
-	*
-	* Calibration
-	* Analog Stick Calibration:  AXY+L
-	* C-Stick Calibration:  AXY+R
-	* Advance Calibration:  A or L or R
-	* Undo Calibration:  Z
-	* Skip to Notch Adjustment:  Start
-	* Notch Adjustment CW/CCW:  X/Y
-	* Notch Adjustment Reset:  B
-	*
-	* Analog Stick Configuration:
-	* Increase/Decrease X-Axis Snapback Filtering:  AX+Du/Dd
-	* Increase/Decrease Y-Axis Snapback Filtering:  AY+Du/Dd
-	* Increase/Decrease X-Axis Waveshaping:  LX+Du/Dd
-	* Increase/Decrease Y-Axis Waveshaping:  LY+Du/Dd
-	* Increase/Decrease X-Axis Smoothing:  RX+Du/Dd
-	* Increase/Decrease Y-Axis Smoothing:  RY+Du/Dd
-	* Show Analog Filtering Settings: L+Start
-	* Increase/Decrease Analog Scaler: LA+Du/Dd
-	* Increase/Decrease Cardinal Snapping: RA+Du/Dd
-	*
-	* C-Stick Configuration
-	* Increase/Decrease X-Axis Snapback Filtering:  AXZ+Du/Dd
-	* Increase/Decrease Y-Axis Snapback Filtering:  AYZ+Du/Dd
-	* Increase/Decrease X-Axis Waveshaping:  LXZ+Du/Dd
-	* Increase/Decrease X-Axis Waveshaping:  LXZ+Du/Dd
-	* Increase/Decrease X-Axis Offset:  RXZ+Du/Dd
-	* Increase/Decrease Y-Axis Offset:  RYZ+Du/Dd
-	* Show C-Stick Settings:  R+Start
-	* Increase/Decrease Analog Scaler: LAZ+Du/Dd
-	* Increase/Decrease Cardinal Snapping: RAZ+Du/Dd
-	*
-	* Swap X with Z:  XZ+Start
-	* Swap Y with Z:  YZ+Start
-	* Swap X with L:  LX+Start
-	* Swap Y with L:  LY+Start
-	* Swap X with R:  RX+Start
-	* Swap Y with R:  Ry+Start
-	*
-	* Toggle L Trigger Mode:  AB+L
-	* Toggle R Trigger Mode:  AB+R
-	* Increase/Decrease L-trigger Offset:  LB+Du/Dd
-	* Increase/Decrease R-Trigger Offset:  RB+Du/Dd
-	*
-	* Extras:
-	* Toggle by holding both sticks in the chosen direction, then pressing A+B
-	* Adjust by holding both sticks in the chosen direction, then pressing A+Dpad directions
-	*/
-
 	static bool advanceCal = false;
 
 	//This will count up as we request settings changes continuously
@@ -1838,12 +2038,14 @@ void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlC
 	//Primarily meant for the trigger offset setting, which has a lot of changes.
 	static int settingChangeCount = 0;
 
+	handleControllerConfig(btn, hardware, controls, gains, normGains, currentCalStep, whichStick, aStickParams, cStickParams, settingChangeCount);
+
 	//check the hardware buttons to change the controller settings
 	if(!controls.safeMode && (currentCalStep == -1)) {
 		//it'll be unlocked after it hits zero
 		const int hardResetLockoutDuration = 800;
 		static int hardResetLockout = hardResetLockoutDuration;
-		if(hardware.A && hardware.B && hardware.Z && hardware.Dd) { //Hard Reset pressed
+		if(checkButtonCombination(hardware) == HARD_RESET) { //Hard Reset pressed
 			if(hardResetLockout > 0) { //Not held long enough
 				hardResetLockout--;
 			} else if(hardResetLockout == 0) { //Held long enough
@@ -1855,244 +2057,18 @@ void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlC
 			hardResetLockout++;
 		}
 
-		if(hardware.A && hardware.X && hardware.Y && hardware.S && !hardware.L && !hardware.R) { //Safe Mode Toggle
+		if(checkButtonCombination(hardware) == SAFE_MODE) { //Safe Mode Toggle
 			controls.safeMode = true;
 			freezeSticks(4000, btn, hardware);
-		} else if (hardware.A && hardware.Z && hardware.Du && !hardware.X && !hardware.Y && !hardware.L && !hardware.R) { //display version number (ignore commands for c stick snapback)
-			const int versionHundreds = floor(SW_VERSION/100.0);
-			const int versionOnes     = SW_VERSION-versionHundreds;
-			btn.Ax = (uint8_t) _floatOrigin;
-			btn.Ay = (uint8_t) _floatOrigin;
-			btn.Cx = (uint8_t) _floatOrigin + versionHundreds;
-			btn.Cy = (uint8_t) _floatOrigin + versionOnes;
-			clearButtons(2000, btn, hardware);
-		} else if (hardware.A && hardware.B && hardware.Z && hardware.S) { //Soft Reset
-			resetDefaults(SOFT, controls, gains, normGains, _aStickParams, _cStickParams);//don't reset sticks
-			freezeSticks(2000, btn, hardware);
-		} else if (hardware.A && hardware.B && hardware.Z && hardware.Dd) { //Hard Reset
-			//actually do nothing, this is just to prevent other things from happening
-		} else if (hardware.A && hardware.X && hardware.Y && hardware.Z) { //Toggle Auto-Initialize
-			settingChangeCount++;
-			changeAutoInit(btn, hardware, controls);
-		} else if(hardware.Z && hardware.S && !hardware.A && !hardware.B && !hardware.X && !hardware.Y) {
-			settingChangeCount++;
-			changeTournamentToggle(btn, hardware, controls);
-		} else if (hardware.A && hardware.B && hardware.Du) { //Increase Rumble
-			settingChangeCount++;
-#ifdef RUMBLE
-			changeRumble(INCREASE, btn, hardware, controls);
-#else // RUMBLE
-			//nothing
-			freezeSticks(2000, btn, hardware);
-#endif // RUMBLE
-		} else if (hardware.A && hardware.B && hardware.Dd) { //Decrease Rumble
-			settingChangeCount++;
-#ifdef RUMBLE
-			changeRumble(DECREASE, btn, hardware, controls);
-#else // RUMBLE
-			//nothing
-			freezeSticks(2000, btn, hardware);
-#endif // RUMBLE
-		} else if (hardware.A && hardware.B && hardware.S) { //Show current rumble setting
-			settingChangeCount++;
-#ifdef RUMBLE
-			showRumble(2000, btn, hardware, controls);
-#else // RUMBLE
-			freezeSticks(2000, btn, hardware);
-#endif // RUMBLE
-		} else if (hardware.A && hardware.X && hardware.Y && hardware.L) { //Analog Calibration
-			debug_println("Calibrating the A stick");
-			whichStick = ASTICK;
-			currentCalStep ++;
-			advanceCal = true;
-			freezeSticks(2000, btn, hardware);
-		} else if (hardware.A && hardware.X && hardware.Y && hardware.R) { //C-stick Calibration
-			debug_println("Calibrating the C stick");
-			whichStick = CSTICK;
-			currentCalStep ++;
-			advanceCal = true;
-			freezeSticks(2000, btn, hardware);
-		} else if(hardware.A && hardware.X && !hardware.Z && hardware.Du) { //Increase Analog X-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustSnapback(XAXIS, INCREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.A && hardware.X && !hardware.Z && hardware.Dd) { //Decrease Analog X-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustSnapback(XAXIS, DECREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.A && hardware.Y && !hardware.Z && hardware.Du) { //Increase Analog Y-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustSnapback(YAXIS, INCREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.A && hardware.Y && !hardware.Z && hardware.Dd) { //Decrease Analog Y-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustSnapback(YAXIS, DECREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.L && hardware.X && !hardware.Z && hardware.Du) { //Increase Analog X-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(ASTICK, XAXIS, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.X && !hardware.Z && hardware.Dd) { //Decrease Analog X-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(ASTICK, XAXIS, DECREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.Y && !hardware.Z && hardware.Du) { //Increase Analog Y-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(ASTICK, YAXIS, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.Y && !hardware.Z && hardware.Dd) { //Decrease Analog Y-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(ASTICK, YAXIS, DECREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.X && !hardware.Z && hardware.Du) { //Increase X-axis Delay
-			settingChangeCount++;
-			adjustSmoothing(XAXIS, INCREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.R && hardware.X && !hardware.Z && hardware.Dd) { //Decrease X-axis Delay
-			settingChangeCount++;
-			adjustSmoothing(XAXIS, DECREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.R && hardware.Y && !hardware.Z && hardware.Du) { //Increase Y-axis Delay
-			settingChangeCount++;
-			adjustSmoothing(YAXIS, INCREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.R && hardware.Y && !hardware.Z && hardware.Dd) { //Decrease Y-axis Delay
-			settingChangeCount++;
-			adjustSmoothing(YAXIS, DECREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.R && hardware.A && hardware.Du && !hardware.Z) { //Increase Cardinal Snapping
-			settingChangeCount++;
-			adjustCardinalSnapping(ASTICK, INCREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.A && hardware.Dd && !hardware.Z) { //Decrease Cardinal Snapping
-			settingChangeCount++;
-			adjustCardinalSnapping(ASTICK, DECREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.A && hardware.Du && !hardware.Z) { //Increase Analog Scaler
-			settingChangeCount++;
-			adjustAnalogScaler(ASTICK, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.A && hardware.Dd && !hardware.Z) { //Decrease Analog Scaler
-			settingChangeCount++;
-			adjustAnalogScaler(ASTICK, DECREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.S && !hardware.A && !hardware.R && !hardware.X && !hardware.Y) { //Show Current Analog Settings (ignore L jump and L trigger toggle and LRAS)
-			showAstickSettings(btn, hardware, controls, gains);
-		} else if(hardware.A && hardware.X && hardware.Z && hardware.Du) { //Increase C-stick X-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustCstickSmoothing(XAXIS, INCREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.A && hardware.X && hardware.Z && hardware.Dd) { //Decrease C-stick X-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustCstickSmoothing(XAXIS, DECREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.A && hardware.Y && hardware.Z && hardware.Du) { //Increase C-stick Y-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustCstickSmoothing(YAXIS, INCREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.A && hardware.Y && hardware.Z && hardware.Dd) { //Decrease C-stick Y-Axis Snapback Filtering
-			settingChangeCount++;
-			adjustCstickSmoothing(YAXIS, DECREASE, btn, hardware, controls, gains, normGains);
-		} else if(hardware.L && hardware.X && hardware.Z && hardware.Du) { //Increase C-stick X-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(CSTICK, XAXIS, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.X && hardware.Z && hardware.Dd) { //Decrease C-stick X-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(CSTICK, XAXIS, DECREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.Y && hardware.Z && hardware.Du) { //Increase C-stick Y-Axis Waveshaping
-			settingChangeCount++;
-			adjustWaveshaping(CSTICK, YAXIS, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.Y && hardware.Z && hardware.Dd) { //Decrease C-stick Y-Axis Waveshaping
-			adjustWaveshaping(CSTICK, YAXIS, DECREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.X && hardware.Z && hardware.Du) { //Increase C-stick X Offset
-			settingChangeCount++;
-			adjustCstickOffset(XAXIS, INCREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.X && hardware.Z && hardware.Dd) { //Decrease C-stick X Offset
-			settingChangeCount++;
-			adjustCstickOffset(XAXIS, DECREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.Y && hardware.Z && hardware.Du) { //Increase C-stick Y Offset
-			settingChangeCount++;
-			adjustCstickOffset(YAXIS, INCREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.Y && hardware.Z && hardware.Dd) { //Decrease C-stick Y Offset
-			settingChangeCount++;
-			adjustCstickOffset(YAXIS, DECREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.A && hardware.Z && hardware.Du) { //Increase C-stick Cardinal Snapping
-			settingChangeCount++;
-			adjustCardinalSnapping(CSTICK, INCREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.A && hardware.Z && hardware.Dd) { //Decrease C-stick Cardinal Snapping
-			settingChangeCount++;
-			adjustCardinalSnapping(CSTICK, DECREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.A && hardware.Z && hardware.Du) { //Increase C-stick Analog Scaler
-			settingChangeCount++;
-			adjustAnalogScaler(CSTICK, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.A && hardware.Z && hardware.Dd) { //Decrease C-stick Analog Scaler
-			settingChangeCount++;
-			adjustAnalogScaler(CSTICK, DECREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.S && !hardware.A && !hardware.L && !hardware.X && !hardware.Y) { //Show Current C-stick Settings (ignore R jump and R trigger toggle and LRAS)
-			showCstickSettings(btn, hardware, controls, gains);
-		} else if(hardware.A && hardware.B && hardware.L) { //Toggle Analog L
-			settingChangeCount++;
-			nextTriggerState(LTRIGGER, btn, hardware, controls);
-		} else if(hardware.A && hardware.B && hardware.R) { //Toggle Analog R
-			settingChangeCount++;
-			nextTriggerState(RTRIGGER, btn, hardware, controls);
-		} else if(hardware.L && hardware.B && hardware.Du) { //Increase L-Trigger Offset
-			settingChangeCount++;
-			adjustTriggerOffset(LTRIGGER, INCREASE, btn, hardware, controls);
-		} else if(hardware.L && hardware.B && hardware.Dd) { //Decrease L-trigger Offset
-			settingChangeCount++;
-			adjustTriggerOffset(LTRIGGER, DECREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.B && hardware.Du) { //Increase R-trigger Offset
-			settingChangeCount++;
-			adjustTriggerOffset(RTRIGGER, INCREASE, btn, hardware, controls);
-		} else if(hardware.R && hardware.B && hardware.Dd) { //Decrease R-trigger Offset
-			settingChangeCount++;
-			adjustTriggerOffset(RTRIGGER, DECREASE, btn, hardware, controls);
-		} else if(hardware.X && hardware.Z && hardware.S) { //Swap X and Z
-			settingChangeCount++;
-			setJumpConfig(SWAP_XZ, controls);
-			freezeSticks(2000, btn, hardware);
-		} else if(hardware.Y && hardware.Z && hardware.S) { //Swap Y and Z
-			settingChangeCount++;
-			setJumpConfig(SWAP_YZ, controls);
-			freezeSticks(2000, btn, hardware);
-		} else if(hardware.X && hardware.L && hardware.S) { //Swap X and L
-			settingChangeCount++;
-			setJumpConfig(SWAP_XL, controls);
-			freezeSticks(2000, btn, hardware);
-		} else if(hardware.Y && hardware.L && hardware.S) { //Swap Y and L
-			settingChangeCount++;
-			setJumpConfig(SWAP_YL, controls);
-			freezeSticks(2000, btn, hardware);
-		} else if(hardware.X && hardware.R && hardware.S) { //Swap X and R
-			settingChangeCount++;
-			setJumpConfig(SWAP_XR, controls);
-			freezeSticks(2000, btn, hardware);
-		} else if(hardware.Y && hardware.R && hardware.S) { //Swap Y and R
-			settingChangeCount++;
-			setJumpConfig(SWAP_YR, controls);
-			freezeSticks(2000, btn, hardware);
-		} else if(checkAdjustExtra(EXTRAS_UP, btn, false)) { // Toggle Extras
-			settingChangeCount++;
-			toggleExtra(EXTRAS_UP, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_DOWN, btn, false)) {
-			settingChangeCount++;
-			toggleExtra(EXTRAS_DOWN, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_LEFT, btn, false)) {
-			settingChangeCount++;
-			toggleExtra(EXTRAS_LEFT, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_RIGHT, btn, false)) {
-			settingChangeCount++;
-			toggleExtra(EXTRAS_RIGHT, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_UP, btn, true)) { // Configure Extras
-			settingChangeCount++;
-			configExtra(EXTRAS_UP, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_DOWN, btn, true)) {
-			settingChangeCount++;
-			configExtra(EXTRAS_DOWN, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_LEFT, btn, true)) {
-			settingChangeCount++;
-			configExtra(EXTRAS_LEFT, btn, hardware, controls);
-		} else if(checkAdjustExtra(EXTRAS_RIGHT, btn, true)) {
-			settingChangeCount++;
-			configExtra(EXTRAS_RIGHT, btn, hardware, controls);
 		} else {
-			//If the buttons were released after changing an applicable setting
-			if(settingChangeCount > 0) {
-				settingChangeCount = 0;
-				//request a commit only if we need to batch them.
-#ifdef BATCHSETTINGS
-				commitSettings();
-#endif //BATCHSETTINGS
-			}
+			handleControllerConfighardware);
 		}
 	} else if (currentCalStep == -1) { //Safe Mode Enabled, Lock Settings, wait for safe mode command
 
 		//it'll be unlocked after it hits zero
 		const int safeModeLockoutDuration = 800;
 		static int safeModeLockout = safeModeLockoutDuration;
-		if(hardware.A && hardware.X && hardware.Y && hardware.S && !hardware.L && !hardware.R) { //Safe Mode toggle
+		if(checkButtonCombination(hardware) == SAFE_MODE) { //Safe Mode toggle
 			if(safeModeLockout > 0) { //Not held long enough
 				safeModeLockout--;
 			} else if(safeModeLockout == 0) { //Held long enough
