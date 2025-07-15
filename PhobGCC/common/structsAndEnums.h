@@ -1,5 +1,6 @@
 #ifndef ENUMS_H
 #define ENUMS_H
+#pragma once
 
 #include <stdint.h>
 
@@ -208,15 +209,6 @@ union ButtonState{
 		uint8_t magic2 : 8;
 	};
 };
-
-uint16_t checkButtonCombination(ButtonState &buttons) {
-	uint16_t bits = 0;
-	bits |= buttons.arr[0];
-	bits = bits << 8;
-	bits |= buttons.arr[1];
-
-	return bits;
-}
 
 struct HardwareButtons{
 	uint8_t L;

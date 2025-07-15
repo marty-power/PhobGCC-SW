@@ -26,8 +26,8 @@ using std::max;
 #include "stick.h"
 #include "../extras/extras.h"
 
-#define BUILD_RELEASE
-//#define BUILD_DEV
+//#define BUILD_RELEASE
+#define BUILD_DEV
 
 //This is just an integer.
 #define SW_VERSION 29
@@ -144,6 +144,15 @@ Pins _pinList {
 	.pinZ  = _pinZ,
 	.pinS  = _pinS
 };
+
+uint16_t checkButtonCombination(ButtonState &buttons) {
+	uint16_t bits = 0;
+	bits |= buttons.arr[0];
+	bits = bits << 8;
+	bits |= buttons.arr[1];
+
+	return bits;
+}
 
 int calcRumblePower(const int rumble){
 	if(rumble > 0) {
@@ -1618,7 +1627,7 @@ void calibrationAdvance(ControlConfig &controls, int &currentCalStep, const Whic
 	}
 }
 
-void handleControllerConfig(ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains, int &currentCalStep, WhichStick &whichStick, StickParams &aStickParams, StickParams &cStickParams, int &settingChangeCount) {
+void handleControllerConfig(ButtonState &btn, ButtonState &hardware, ControlConfig &controls, FilterGains &gains, FilterGains &normGains, int &currentCalStep, WhichStick &whichStick, StickParams &aStickParams, StickParams &cStickParams, int &settingChangeCount, bool &advanceCal) {
 	uint16_t currentButtonCombo = checkButtonCombination(hardware);
 	bool matchFound = true;
 
@@ -1627,11 +1636,12 @@ void handleControllerConfig(ButtonState &btn, ButtonState &hardware, ControlConf
 		case SOFT_RESET:
 			resetDefaults(SOFT, controls, gains, normGains, _aStickParams, _cStickParams);//don't reset sticks
 			freezeSticks(2000, btn, hardware);
-			return 0;
+			break;
 		case HARD_RESET:
 			// actually do nothing, this is just to prevent other things from happening
-			return 0;
+			break;
 		case DISPLAY_VERSION:
+		{
 			const int versionHundreds = floor(SW_VERSION/100.0);
 			const int versionOnes     = SW_VERSION-versionHundreds;
 			btn.Ax = (uint8_t) _floatOrigin;
@@ -1639,27 +1649,28 @@ void handleControllerConfig(ButtonState &btn, ButtonState &hardware, ControlConf
 			btn.Cx = (uint8_t) _floatOrigin + versionHundreds;
 			btn.Cy = (uint8_t) _floatOrigin + versionOnes;
 			clearButtons(2000, btn, hardware);
-			return 0;
+			break;
+		}
 		case DISPLAY_ANALOG_FILTER_SETTING:
 			showAstickSettings(btn, hardware, controls, gains);
-			return 0;
+			break;
 		case DISPLAY_C_STICK_FILTER_SETTING:
 			showCstickSettings(btn, hardware, controls, gains);
-			return 0;
+			break;
 		case ANALOG_STICK_CALIBRATION:
 			debug_println("Calibrating the A stick");
 			whichStick = ASTICK;
 			currentCalStep ++;
 			advanceCal = true;
 			freezeSticks(2000, btn, hardware);
-			return 0;
+			break;
 		case C_STICK_CALIBRATION:
 			debug_println("Calibrating the C stick");
 			whichStick = CSTICK;
 			currentCalStep ++;
 			advanceCal = true;
 			freezeSticks(2000, btn, hardware);
-			return 0;
+			break;
 		default:
 			matchFound = false;
 	}
@@ -1871,7 +1882,7 @@ void handleControllerConfig(ButtonState &btn, ButtonState &hardware, ControlConf
 #ifdef BATCHSETTINGS
 			commitSettings();
 #endif //BATCHSETTINGS
-			return 0;
+			return;
 		}
 	}
 
@@ -2038,8 +2049,6 @@ void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlC
 	//Primarily meant for the trigger offset setting, which has a lot of changes.
 	static int settingChangeCount = 0;
 
-	handleControllerConfig(btn, hardware, controls, gains, normGains, currentCalStep, whichStick, aStickParams, cStickParams, settingChangeCount);
-
 	//check the hardware buttons to change the controller settings
 	if(!controls.safeMode && (currentCalStep == -1)) {
 		//it'll be unlocked after it hits zero
@@ -2061,7 +2070,7 @@ void processButtons(Pins &pin, ButtonState &btn, ButtonState &hardware, ControlC
 			controls.safeMode = true;
 			freezeSticks(4000, btn, hardware);
 		} else {
-			handleControllerConfighardware);
+			handleControllerConfig(btn, hardware, controls, gains, normGains, currentCalStep, whichStick, aStickParams, cStickParams, settingChangeCount, advanceCal);
 		}
 	} else if (currentCalStep == -1) { //Safe Mode Enabled, Lock Settings, wait for safe mode command
 
